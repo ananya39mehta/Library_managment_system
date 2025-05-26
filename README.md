@@ -11,13 +11,21 @@ This is a Flask-based backend service for a Library Management System that allow
 - **Statistics Endpoint**: Fetch summary statistics like total books, active loans, and overdue books.
 
 ## Notable Design and Implementation Decisions
+- **Clear separation between book metadata and physical copies**:Instead of treating each book as a unique item, we separate book metadata (like title, author, ISBN) from its physical copies. This allows us to manage multiple copies of the same book efficiently—each with its own availability and shelf location.
 
-- **Normalized Relational Schema**: The system uses normalized SQLAlchemy models, including many-to-many relationships (e.g., books and categories) and one-to-many (e.g., borrowers and loans).
-- **ISBN-Based Metadata Deduplication**: New books are deduplicated by ISBN; only new copies are added if the ISBN exists.
-- **Fine Calculation on Return**: Fines are dynamically calculated at the time of return using category-specific daily rates.
-- **Efficient Loan Lookup**: Book availability and borrower loans are optimized using eager loading and indexed queries.
-- **CORS Enabled**: The backend supports CORS for front-end integrations.
-- **Structured JSON API**: Routes follow REST-like semantics and return well-structured JSON for frontend consumption.
+- **Smart handling of duplicate books**:
+When a new book is added, the system checks if the ISBN already exists. If it does, we just add more copies instead of duplicating the book metadata. This keeps the database clean and avoids redundancy.
+
+- **Fine-grained relationships using SQLAlchemy**:
+We modeled relationships explicitly—like many-to-many between books and categories, and one-to-many between borrowers and loans. This makes it easy to query related data and scale the system as needed.
+
+- **Automatic due date and fine calculation**:
+When someone borrows a book, the due date is calculated based on their category (e.g., students vs faculty). If they return it late, the system automatically calculates a fine using a category-specific rate.
+
+- **Consistent borrower experience**:
+Borrower information includes their history, current loans, fines owed, and payment records—all in one place. This helps admins get a full picture at a glance.
+
+
 
 ## API Endpoints
 
