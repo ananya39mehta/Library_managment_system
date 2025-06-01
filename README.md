@@ -1,19 +1,45 @@
-**LIBRARY MANAGEMENT SYSTEM**
+# 📚 Library Book Summary Editor
 
-This library system is designed with clients's needs in mind, focusing on making daily 
-management straightforward and efficient. Every book is tracked with detailed information —
-like title, author, ISBN, copies, and location—so you always know what’s available and where. 
-Borrowers are organized by categories (such as students or staff) and departments, letting 
-you easily set different borrowing rules and fine rates for each group. This structure gives
-you flexibility and control, while also making it simple to generate reports or adjust 
-policies as your library grows.
+This project is a simple web-based interface for managing and editing book summaries stored in a MongoDB database. It was built as part of an assignment to demonstrate basic CRUD operations, dynamic rendering with JavaScript, and thoughtful UI/UX using modals.
 
-The relationships between books, borrowers, loans, and fines are set up to automate as much 
-as possible. When someone borrows or returns a book, the system updates records automatically,
-tracks overdue items, and calculates any fines owed. Fine transactions are linked directly 
-to loans and borrowers, so you always have a clear history of payments and outstanding 
-amounts. Overall, these design choices reduce manual work, minimize errors, and keep your 
-library organized and easy to manage from a single, unified system.
+---
 
-**File included:**  
-- `er-diagram.pdf`: Visual ER diagram of the improved system.
+## ✨ What This Project Does
+
+- Displays a table of library books retrieved from a MongoDB collection.
+- Shows metadata like `metadata_id`, title, author, and current summary (if any).
+- Lets you **edit or add summaries** for each book using a clean modal popup.
+- Automatically updates MongoDB when a summary is saved.
+- Keeps the experience smooth with real-time updates — no need to refresh manually.
+
+---
+
+## 🧠 Why I Built It
+
+This assignment challenged me to integrate:
+- Front-end development (HTML, CSS, JS)
+- Working with APIs and async calls (`fetch`)
+- Connecting to a backend powered by MongoDB
+- Implementing a modal-based UI that feels intuitive and functional
+
+The goal wasn’t just to display data, but to give users a better way to interact with it — especially editing multiline summaries in a clear, user-friendly way.
+
+---
+
+## ⚙️ How It Works
+
+### 📦 Backend (Expected API)
+
+This project assumes the existence of a REST API with the following endpoints:
+
+- `GET /mongo/books`: returns a list of all books
+- `POST /mongo/books/:metadata_id/summary`: updates the summary of a book
+
+Each book in the response is expected to have:
+```json
+{
+  "metadata_id": 1,
+  "title": "1984",
+  "author": "George Orwell",
+  "book_summary": ["this is a book"]
+}
