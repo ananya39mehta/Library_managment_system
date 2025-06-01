@@ -1,42 +1,43 @@
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('addBorrowerForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        const newBorrower = {
-          name: document.getElementById('newBorrowerName').value,
-          email: document.getElementById('newBorrowerEmail').value,
-          phone: document.getElementById('newBorrowerPhone').value,
-          address: document.getElementById('newBorrowerAddress').value,
-          category_id: document.getElementById('newBorrowerCategory').value,
-          dept_id: document.getElementById('newBorrowerDeptId').value || null
-        };
+    const newBorrower = {
+      name: document.getElementById('newBorrowerName').value,
+      email: document.getElementById('newBorrowerEmail').value,
+      phone: document.getElementById('newBorrowerPhone').value,
+      address: document.getElementById('newBorrowerAddress').value,
+      category_id: document.getElementById('newBorrowerCategory').value,
+      dept_id: document.getElementById('newBorrowerDeptId').value || null
+    };
 
-        try {
-          const category = document.getElementById('newBorrowerCategory').value;
-            if (!['Student', 'Faculty', 'Visitor', 'Researcher'].includes(category)) {
-              alert('Please select a valid category.');
-              return;
-            }
+    try {
+      const category = document.getElementById('newBorrowerCategory').value;
+      if (!['Student', 'Faculty', 'Visitor', 'Researcher'].includes(category)) {
+        alert('Please select a valid category.');
+        return;
+      }
 
-          const res = await fetch('/api/borrowers', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newBorrower)
-          });
-
-          const result = await res.json();
-
-          if (res.ok) {
-            alert(`Borrower added with ID: ${result.borrower_id}`);
-            document.getElementById('addBorrowerForm').reset();
-          } else {
-            alert(`Error: ${result.message || 'Could not add borrower'}`);
-          }
-        } catch (err) {
-          console.error(err);
-          alert('An error occurred while adding the borrower.');
-        }
+      const res = await fetch('/api/borrowers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newBorrower)
       });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        alert(`Borrower added with ID: ${result.borrower_id}`);
+        document.getElementById('addBorrowerForm').reset();
+      } else {
+        alert(`Error: ${result.message || 'Could not add borrower'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while adding the borrower.');
+    }
+  });
+
   const fetchBtn = document.getElementById('searchBorrowerBtn');
   const borrowerInput = document.getElementById('borrowerIdInput');
 
@@ -45,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  let currentBorrowerId = null; // Store current borrowerId for reuse
+  let currentBorrowerId = null;
 
   fetchBtn.addEventListener('click', async () => {
     const borrowerId = borrowerInput.value.trim();
@@ -65,13 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       currentBorrowerId = borrowerId;
 
-      // Show borrower details section
       const borrowerDetailsSection = document.getElementById('borrowerDetails');
       if (borrowerDetailsSection) {
         borrowerDetailsSection.style.display = 'block';
       }
 
-      // Fill borrower info (DISPLAY & INPUTS)
       document.getElementById('borrowerNameDisplay').textContent = data.name || '-';
       document.getElementById('borrowerEmailDisplay').textContent = data.email || '-';
       document.getElementById('borrowerPhoneDisplay').textContent = data.phone || '-';
@@ -83,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('borrowerDepartment').value = data.department || '';
       document.getElementById('borrowerRegistered').textContent = data.registered_on || '-';
 
-      // Fill current loans table
       const loansTbody = document.querySelector('#currentLoansTable tbody');
       loansTbody.innerHTML = '';
       if (data.current_loans && data.current_loans.length > 0) {
@@ -103,10 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
         loansTbody.innerHTML = '<tr><td colspan="4">No current loans</td></tr>';
       }
 
-      // Fines
       document.getElementById('totalFines').textContent = data.total_fines_due || '0';
 
-      // Fine payment history
       const fineHistoryUl = document.getElementById('finePaymentHistory');
       fineHistoryUl.innerHTML = '';
       if (data.fine_payments && data.fine_payments.length > 0) {
@@ -125,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // EDIT BORROWER HANDLER
   document.getElementById('editBorrowerBtn').addEventListener('click', () => {
     if (!currentBorrowerId) {
       alert('Search for a borrower first.');
@@ -157,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
           alert('Error: ' + data.error);
         } else {
           alert('Borrower info updated successfully!');
-          // Optionally refresh displayed info
           document.getElementById('borrowerNameDisplay').textContent = name;
           document.getElementById('borrowerEmailDisplay').textContent = email;
           document.getElementById('borrowerPhoneDisplay').textContent = phone;
@@ -170,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // PAY FINE HANDLER
   document.getElementById('recordFinePaymentBtn').addEventListener('click', () => {
     const loanId = document.getElementById('fineLoanId').value;
     const amount = parseFloat(document.getElementById('fineAmount').value);
@@ -199,8 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.error) {
           alert('Error: ' + data.error);
         } else {
-          alert('Fine payment recorded! Remaining fine: ₹' + data.remaining_fine);
-          // Optionally refresh borrower data
+          alert(`Fine payment recorded! Remaining fine: ₹${data.remaining_fine}`);
           document.getElementById('totalFines').textContent = data.remaining_fine;
           const fineHistoryUl = document.getElementById('finePaymentHistory');
           const li = document.createElement('li');
@@ -213,5 +205,4 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Failed to record fine payment');
       });
   });
-
 });

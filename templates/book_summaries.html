@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Library Book Summaries</title>
+<style>
+  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+  th, td { border: 1px solid #ddd; padding: 8px; }
+  th { background-color: #f2f2f2; }
+  textarea { width: 100%; height: 80px; }
+  button { padding: 6px 12px; margin: 4px; }
+  #summaryModal { display: none; position: fixed; top: 50%; left: 50%; 
+    transform: translate(-50%, -50%); background: white; border: 1px solid #aaa; 
+    padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 10; width: 400px; }
+  #modalOverlay { display: none; position: fixed; top: 0; left: 0; 
+    width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 5; }
+</style>
+</head>
+<body>
+<h2>Library Books with Summaries</h2>
+<table id="booksTable">
+  <thead>
+    <tr>
+      <th>Metadata ID</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Summary</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div id="modalOverlay"></div>
+<div id="summaryModal">
+  <h3>Edit Book Summary</h3>
+  <p id="bookTitle"></p>
+  <textarea id="summaryInput"></textarea>
+  <br />
+  <button id="saveBtn">Save</button>
+  <button id="cancelBtn">Cancel</button>
+</div>
+
+<script>
+  const apiBase = '/mongo/books';
+  const tableBody = document.querySelector("#booksTable tbody");
+  const modal = document.getElementById("summaryModal");
+  const overlay = document.getElementById("modalOverlay");
+  const summaryInput = document.getElementById("summaryInput");
+  const bookTitleElem = document.getElementById("bookTitle");
+  let currentMetadataId = null;
+
+  // Fetch and display books
+  async function loadBooks() {
+    const res = await fetch(apiBase);
+    const books = await res.json();
+    tableBody.innerHTML = "";
+    books.forEach(book => {
+      const tr = document.createElement("tr");
+
+      const summaryText = book.book_summary && book.book_summary.length > 0 ? 
+                          book.book_summary.join("\n") : "<i>No summary</i>";
+
+      tr.innerHTML = `
+        <td>${book.metadata_id}</td>
+        <td>${book.title}</td>
+        <td>${book.author || ''}</td>
+        <td><pre style="white-space: pre-wrap;">${summaryText}</pre></td>
+        <td>
+          <button onclick='openModal(${book.metadata_id}, ${JSON.stringify(book.title)}, ${JSON.stringify(book.book_summary)})'>Add/Edit Summary</button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  // Open modal to edit summary
+  function openModal(metadataId, title, summary) {
+    currentMetadataId = metadataId;
+    bookTitleElem.textContent = title;
+    summaryInput.value = summary ? summary.join("\n") : "";
+    modal.style.display = "block";
+    overlay.style.display = "block";
+  }
+
+  // Close modal
+  function closeModal() {
+    modal.style.display = "none";
+    overlay.style.display = "none";
+    summaryInput.value = "";
+    currentMetadataId = null;
+  }
+
+  // Save summary to backend
+  async function saveSummary() {
+    if (currentMetadataId === null) return;
+
+    const summaryLines = summaryInput.value
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    const res = await fetch(`${apiBase}/${currentMetadataId}/summary`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ book_summary: summaryLines }),
+    });
+
+    if (res.ok) {
+      alert("Summary updated!");
+      closeModal();
+      loadBooks();
+    } else {
+      const err = await res.json();
+      alert("Error: " + err.error);
+    }
+  }
+
+  document.getElementById("saveBtn").addEventListener("click", saveSummary);
+  document.getElementById("cancelBtn").addEventListener("click", closeModal);
+  overlay.addEventListener("click", closeModal);
+
+  loadBooks();
+</script>
+</body>
+</html>

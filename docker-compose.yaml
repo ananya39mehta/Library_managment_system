@@ -13,6 +13,16 @@ services:
       - ./01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ./02-data.sql:/docker-entrypoint-initdb.d/02-data.sql
 
+    # --- MongoDB Service ---
+  mongo:
+    image: mongo:6
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+      - ./init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js:ro
+
   flask_app:
     build: .
     restart: always
@@ -22,8 +32,10 @@ services:
       - DATABASE_URL=postgresql://lms:lms123@db:5432/library
     depends_on:
       - db
+      - mongo
     volumes:
       - .:/app
 
 volumes:
   pgdata:
+  mongodata:

@@ -8,11 +8,14 @@ from sqlalchemy import or_
 from decimal import Decimal
 from sqlalchemy import text
 import traceback
+from flask_pymongo import PyMongo
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 CORS(app)
 
-# Config
+# Config 
+
+# Connect POstgres 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'DATABASE_URL',
     'postgresql://lms:lms123@localhost:5433/library'
@@ -20,6 +23,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# MongoDB Config
+app.config["MONGO_URI"] = "mongodb://library_managment_system-mongo-1:27017/library_db"
+mongo = PyMongo(app)
+books_collection = mongo.db.books
 # Models
 
 class Category(db.Model):
@@ -147,10 +154,41 @@ def borrower_management():
 def book_management():
     return render_template('book_management.html')
 
-@app.route('/loan_fine')
-def loan_fine_management():
-    return render_template('loan_fine.html')
+@app.route("/book_summaries")
+def book_summaries_page():
+    return render_template("book_summaries.html")
 
+# --- New routes for MongoDB book summaries ---
+
+# Get all books with summaries from MongoDB
+@app.route("/mongo/books", methods=["GET"])
+def get_books_mongo():
+    books = list(mongo.db.books.find())
+    for book in books:
+        book['_id'] = str(book['_id'])
+    return jsonify(books)
+
+# Update or add book summary by metadata_id
+@app.route("/mongo/books/<int:metadata_id>/summary", methods=["POST"])
+def update_book_summary(metadata_id):
+    data = request.get_json()
+    if not data or "book_summary" not in data:
+        return jsonify({"error": "Missing 'book_summary' in request body"}), 400
+
+    summary = data["book_summary"]
+    if not isinstance(summary, list):
+        return jsonify({"error": "'book_summary' must be a list"}), 400
+
+    result = books_collection.update_one(
+        {"metadata_id": metadata_id},
+        {"$set": {"book_summary": summary}}
+    )
+
+    if result.matched_count == 0:
+        return jsonify({"error": "Book not found"}), 404
+
+    return jsonify({"message": "Book summary updated"}), 200
+# -------------------------------------------------
 # ---Route : Dispaly the book Catelog 
 @app.route('/api/books', methods=['GET'])
 def get_books():
@@ -369,6 +407,8 @@ def borrow_book():
         book_copy.available = False
         db.session.add(loan)
         db.session.commit()
+       
+
 
         return jsonify({'message': 'Book borrowed successfully!'}), 200
 
@@ -412,6 +452,7 @@ def return_book():
         loan.borrower.total_fines_due += fine
 
     db.session.commit()
+   
     return jsonify({'message': 'Book returned successfully!'}), 200
 
 # ---Route : Get borrower Info by ID
@@ -620,7 +661,6 @@ def add_borrower():
     db.session.commit()
 
     return jsonify({'message': 'Borrower added', 'borrower_id': new_borrower.borrower_id}), 201
-
 
 
 if __name__ == '__main__':
